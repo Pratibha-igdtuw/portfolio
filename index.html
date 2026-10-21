@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pratibha Mittal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Hanken+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout concept: a streaming-service home screen. Gate screen picks a "profile", then one long page of rows, tiles and episode cards. Single dark look by choice. */
+:root{
+  --bg:#0b0a10; --bg2:#14121b; --card:#1a1723; --line:#2b2736;
+  --fg:#f4f1f6; --mute:#a59fb3; --accent:#e5385a; --plum:#5b1f4d;
+  --display:'Bebas Neue','Arial Narrow',Impact,sans-serif;
+  --body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.6 var(--body);padding-block:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:inherit}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{max-width:1180px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.02em;line-height:.95;margin:0;text-wrap:balance}
+.eyebrow{font:500 12px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:"";width:28px;height:3px;background:var(--accent)}
+.mute{color:var(--mute)}
+
+/* gate */
+#gate{position:fixed;inset:0;z-index:50;background:radial-gradient(ellipse at 50% 30%,#241a2e,#0b0a10 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+#gate[hidden]{display:none}
+#gate h2{font-size:clamp(40px,7vw,72px)}
+.profiles{display:flex;gap:clamp(12px,2.5vw,28px);flex-wrap:wrap;justify-content:center}
+.prof{background:none;border:0;width:clamp(120px,20vw,168px);text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center}
+.prof .av{width:100%;aspect-ratio:1;border-radius:10px;border:3px solid transparent;display:grid;place-items:center;font:400 54px var(--display);overflow:hidden;transition:transform .2s,border-color .2s}
+.prof:hover .av,.prof:focus-visible .av{transform:scale(1.07);border-color:#fff}
+.prof b{font-weight:700}
+.prof small{color:var(--mute);font-size:12px;line-height:1.35}
+.av img{width:100%;height:100%;object-fit:cover;object-position:50% 20%}
+.main-tag{position:absolute;margin:-8px 0 0 70%;background:var(--accent);font:700 10px var(--mono);letter-spacing:.1em;padding:3px 7px;border-radius:3px}
+.prof{position:relative}
+
+/* nav */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px));background:linear-gradient(#0b0a10ee,#0b0a10cc);backdrop-filter:blur(8px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+nav{display:flex;align-items:center;gap:22px;height:58px}
+.logo{font:400 30px var(--display);color:var(--accent);letter-spacing:.04em;text-decoration:none;white-space:nowrap}
+.links{display:flex;gap:18px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.links a{font-size:14px;font-weight:500;text-decoration:none;color:var(--mute);white-space:nowrap;padding:6px 0;border-bottom:2px solid transparent}
+.links a:hover,.links a.on{color:var(--fg);border-color:var(--accent)}
+.whoami{background:none;border:0;padding:0;display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mute)}
+.whoami span.chip{width:30px;height:30px;border-radius:6px;overflow:hidden;display:grid;place-items:center;font:400 18px var(--display);color:#fff}
+@media(max-width:560px){.whoami em{display:none}}
+
+main{display:flex;flex-direction:column}
+section{padding-block:clamp(48px,8vw,88px);scroll-margin-top:60px}
+#home{order:0;padding-block:clamp(24px,5vw,56px) clamp(48px,8vw,88px)}
+#resume{order:1}#skills{order:2}#originals{order:3}#journey{order:4}#about{order:5}#contact{order:6}
+body[data-p="recruiter"] #resume{order:0}
+body[data-p="recruiter"] #home{order:-1}
+body[data-p="developer"] #originals{order:0}body[data-p="developer"] #skills{order:1}body[data-p="developer"] #resume{order:2}
+body[data-p="storyteller"] #journey{order:0}body[data-p="storyteller"] #about{order:1}body[data-p="storyteller"] #originals{order:2}
+body[data-p="recruiter"] #home,body[data-p="developer"] #home,body[data-p="storyteller"] #home{order:-1}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center;position:relative}
+.hero h1{font-size:clamp(64px,13vw,168px);letter-spacing:.015em;text-shadow:0 6px 40px #0008}
+.series{font:700 14px var(--mono);letter-spacing:.35em;color:var(--accent);margin:6px 0 18px}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.meta span{font:500 12px var(--mono);border:1px solid var(--line);background:var(--bg2);padding:5px 10px;border-radius:4px}
+.meta span.hot{background:var(--accent);border-color:var(--accent)}
+.role{font:400 20px var(--display);letter-spacing:.14em;color:var(--mute);margin-bottom:12px}
+.hero p.lead{max-width:56ch;font-size:17px;color:#d9d4e0;margin:0 0 24px}
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.btn{border:0;border-radius:6px;padding:12px 22px;font-weight:700;font-size:15px;text-decoration:none;display:inline-flex;gap:8px;align-items:center;transition:transform .15s,background .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn.p{background:#fff;color:#111}
+.btn.s{background:#ffffff26;color:#fff}
+.portrait{position:relative;justify-self:end;width:min(100%,460px);aspect-ratio:651/900}
+.portrait::before{content:"";position:absolute;inset:8% -10% 0;background:radial-gradient(closest-side,#9b1d4a99,transparent 75%);filter:blur(10px)}
+.portrait img{position:relative;width:100%;height:100%;object-fit:cover;border-radius:12px;-webkit-mask-image:linear-gradient(#000 70%,transparent);mask-image:linear-gradient(#000 70%,transparent)}
+.cont{display:inline-block;margin-top:34px;font:400 26px var(--display);letter-spacing:.06em;text-decoration:none;color:var(--mute)}
+.cont:hover{color:var(--fg)}
+@media(max-width:820px){.hero{grid-template-columns:1fr}.portrait{order:-1;justify-self:center;width:min(78%,340px)}}
+
+/* section heads */
+.head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:32px}
+.head h2{font-size:clamp(44px,8vw,88px);margin-top:14px}
+.head p{max-width:34ch;color:var(--mute);font-size:14px;margin:0}
+
+/* resume */
+.resume{display:grid;grid-template-columns:1.6fr 1fr;gap:20px}
+@media(max-width:860px){.resume{grid-template-columns:1fr}}
+.paper{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:clamp(18px,3vw,32px);display:flex;flex-direction:column;gap:26px;min-width:0}
+.paper h3{font:700 12px var(--mono);letter-spacing:.2em;color:var(--accent);margin-bottom:12px;text-transform:uppercase}
+.row{display:flex;justify-content:space-between;gap:16px;padding-block:8px;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.row b{display:block;font-weight:700}.row small{color:var(--mute)}
+.row time{font:500 12px var(--mono);color:var(--mute);white-space:nowrap}
+.side{display:flex;flex-direction:column;gap:20px;min-width:0}
+.side .card{background:var(--card);border-radius:10px;padding:22px;border:1px solid var(--line)}
+.side h3{font-size:34px;margin-bottom:8px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+.stats div{text-align:center;border:1px solid var(--line);border-radius:8px;padding:12px 4px}
+.stats b{display:block;font:400 34px var(--display);color:var(--accent);line-height:1}
+.stats small{font:500 10px var(--mono);letter-spacing:.1em;color:var(--mute);text-transform:uppercase}
+
+/* skills */
+.uni{display:grid;grid-template-columns:260px 1fr;gap:28px;min-height:340px}
+@media(max-width:760px){.uni{grid-template-columns:1fr}}
+.cats{display:flex;flex-direction:column;gap:2px}
+@media(max-width:760px){.cats{flex-direction:row;overflow-x:auto;gap:14px;padding-bottom:6px}}
+.cat{background:none;border:0;border-left:3px solid transparent;text-align:left;padding:8px 14px;font:400 30px var(--display);letter-spacing:.03em;color:#8a8498;white-space:nowrap;transition:color .15s}
+.cat small{display:block;font:400 12px var(--body);letter-spacing:0;color:var(--mute)}
+.cat:hover{color:#fff}
+.cat[aria-selected=true]{color:#fff;border-color:var(--accent);background:linear-gradient(90deg,#ffffff12,transparent)}
+@media(max-width:760px){.cat{border-left:0;border-bottom:3px solid transparent;padding:6px 2px}.cat small{display:none}}
+.panel h3{font:500 13px var(--mono);letter-spacing:.1em;color:var(--mute);margin-bottom:16px;text-transform:uppercase}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px;transition:transform .2s,border-color .2s}
+.tile:hover{transform:translateY(-4px);border-color:var(--accent)}
+.tile i{font:700 13px var(--mono);font-style:normal;width:38px;height:38px;border-radius:8px;display:grid;place-items:center;color:#fff}
+.tile span{font-weight:700;font-size:14px;line-height:1.3}
+
+/* originals */
+.rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:20px}
+.ep{border-radius:12px;overflow:hidden;background:var(--card);border:1px solid var(--line);display:flex;flex-direction:column;min-width:0}
+.poster{position:relative;aspect-ratio:16/10;padding:20px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.poster b{position:absolute;right:12px;top:-6px;font:400 130px var(--display);opacity:.22;line-height:1}
+.poster .tag{font:700 10px var(--mono);letter-spacing:.2em;opacity:.85;margin-bottom:6px}
+.poster h3{font-size:clamp(34px,5vw,48px)}
+.ep .body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:12px;flex:1}
+.ep .body p{margin:0;color:#d4cfdc;font-size:14px}
+.stack{display:flex;flex-wrap:wrap;gap:6px}
+.stack span{font:500 11px var(--mono);background:#ffffff12;border-radius:4px;padding:3px 8px}
+.ep ul{margin:0;padding-left:18px;color:var(--mute);font-size:13.5px;display:flex;flex-direction:column;gap:6px}
+.ep details summary{cursor:pointer;font-weight:700;font-size:14px;list-style:none}
+.ep details summary::before{content:"▸ ";color:var(--accent)}
+.ep details[open] summary::before{content:"▾ "}
+.ep details ul{margin-top:10px}
+.ep .go{margin-top:auto;font:500 13px var(--mono);color:var(--fg)}
+.g1{background:linear-gradient(135deg,#b3183f,#4a0f2e)}
+.g2{background:linear-gradient(135deg,#d98a14,#6b2b0d)}
+.g3{background:linear-gradient(135deg,#1c7fa5,#16254f)}
+
+/* journey */
+.seasons{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:26px}
+.sbtn{background:#ffffff10;border:1px solid var(--line);border-radius:999px;padding:8px 18px;font-size:13px;font-weight:500;white-space:nowrap;color:var(--mute)}
+.sbtn small{font:700 10px var(--mono);letter-spacing:.14em;margin-right:8px;color:var(--accent)}
+.sbtn[aria-selected=true]{background:#fff;color:#111}
+.sbtn[aria-selected=true] small{color:#b3183f}
+.season h3{font-size:clamp(34px,6vw,60px);margin-bottom:6px}
+.season .sub{color:var(--mute);margin:0 0 22px;max-width:60ch}
+.eps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
+.eps article{border-radius:10px;padding:20px;border:1px solid var(--line);background:var(--card);position:relative;overflow:hidden;min-width:0}
+.eps article b{position:absolute;right:10px;bottom:-14px;font:400 90px var(--display);opacity:.1;line-height:1}
+.eps .when{font:500 11px var(--mono);letter-spacing:.14em;color:var(--accent);text-transform:uppercase}
+.eps h4{font:400 28px var(--display);letter-spacing:.03em;margin:6px 0 6px}
+.eps p{margin:0;font-size:14px;color:#cfc9d8}
+
+/* about + contact */
+.about{display:grid;grid-template-columns:1fr 1fr;gap:clamp(20px,4vw,56px);align-items:start}
+@media(max-width:760px){.about{grid-template-columns:1fr}}
+.about p{margin:0 0 14px;color:#d4cfdc;max-width:60ch}
+.facts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;background:var(--bg2)}
+.facts div{display:flex;justify-content:space-between;gap:16px;padding:14px 18px;border-bottom:1px solid var(--line);font-size:14px}
+.facts div:last-child{border:0}
+.facts span{color:var(--mute)}
+.facts b{text-align:right;font-weight:500}
+.contact{background:linear-gradient(135deg,#3a1233,#14121b);border:1px solid var(--line);border-radius:14px;padding:clamp(24px,5vw,56px);display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.contact h2{font-size:clamp(48px,9vw,110px)}
+.mail{font:500 16px var(--mono);background:#00000055;padding:10px 14px;border-radius:6px;user-select:all;word-break:break-all}
+footer{padding-block:34px calc(34px + env(safe-area-inset-bottom,0px));color:var(--mute);font:500 12px var(--mono);border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* motion */
+@keyframes up{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(60px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes name{from{opacity:0;letter-spacing:.14em;filter:blur(14px)}to{opacity:1;letter-spacing:.015em;filter:blur(0)}}
+@keyframes pulse{0%,100%{opacity:.75;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+.prof{animation:up .6s both}
+.prof:nth-child(1){animation-delay:.1s}.prof:nth-child(2){animation-delay:.22s}.prof:nth-child(3){animation-delay:.34s}.prof:nth-child(4){animation-delay:.46s}
+.hero h1,.hero .eyebrow,.series,.meta,.role,.hero p.lead,.btns.hb,.portrait,.cont{opacity:0}
+body.go .hero .eyebrow{animation:up .7s .05s both}
+body.go .hero h1{animation:name 1.2s .15s cubic-bezier(.2,.7,.2,1) both}
+body.go .series{animation:up .7s .7s both}
+body.go .meta{animation:up .7s .85s both}
+body.go .role{animation:up .7s .95s both}
+body.go .hero p.lead{animation:up .7s 1.05s both}
+body.go .btns.hb{animation:up .7s 1.2s both}
+body.go .portrait{animation:rise 1.3s .3s cubic-bezier(.2,.7,.2,1) both}
+body.go .cont{animation:up .7s 1.5s both}
+.portrait::before{animation:pulse 5s ease-in-out infinite}
+.portrait img{will-change:translate}
+.rv{opacity:0;transform:translateY(34px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--d,0)*90ms)}
+.rv.in{opacity:1;transform:none}
+.tile,.eps article{animation:up .5s calc(var(--i,0)*60ms) both}
+.panel h3,.season h3,.season .sub{animation:up .5s both}
+@media(prefers-reduced-motion:reduce){*,*::before{animation:none!important}.hero *,.portrait,.prof{opacity:1!important}.rv{opacity:1;transform:none}}
+
+/* intro splash (title screen before the profile gate) */
+#intro{position:fixed;inset:0;z-index:60;background:radial-gradient(ellipse at 50% 62%,#5a1236 0,#1a0a1d 42%,#07060a 78%);overflow:hidden;display:flex;flex-direction:column;transition:opacity .6s ease,transform .7s cubic-bezier(.5,0,.2,1)}
+#intro[hidden]{display:none}
+#intro.out{opacity:0;transform:scale(1.12);pointer-events:none}
+.i-glow{position:absolute;left:calc(50% - min(60vw,360px));bottom:4%;width:min(120vw,720px);aspect-ratio:1;background:radial-gradient(closest-side,#e5385a88,transparent 72%);filter:blur(18px);animation:pulse 5s ease-in-out infinite}
+.i-head{position:relative;flex:none;text-align:center;z-index:1;padding:calc(env(safe-area-inset-top,0px) + clamp(28px,6vh,64px)) 16px 0}
+.i-head h1{font-size:clamp(64px,min(20vw,15vh),190px);letter-spacing:.02em;text-shadow:0 8px 50px #000c;animation:name 1.4s .1s cubic-bezier(.2,.7,.2,1) both}
+.i-series{font:700 clamp(11px,2.6vw,15px) var(--mono);letter-spacing:.4em;color:var(--accent);margin-top:6px;animation:up .8s .9s both}
+@keyframes icut{from{opacity:0;transform:translate(-50%,60px) scale(.94)}to{opacity:1;transform:translate(-50%,0)}}
+.i-stage{position:relative;flex:1;min-height:0;z-index:2}
+.i-cut{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:100%;max-width:100%;object-fit:contain;object-position:50% 100%;pointer-events:none;animation:icut 1.4s .3s cubic-bezier(.2,.7,.2,1) both}
+.i-foot{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 16px calc(env(safe-area-inset-bottom,0px) + 32px);text-align:center;animation:up .8s 1.3s both}
+.i-tag{font:500 12px/1.4 var(--mono);letter-spacing:.22em;color:#fff;text-shadow:0 2px 12px #000}
+.i-play{padding:13px 38px;font-size:16px;border-radius:999px}
+
+html,body{margin:0}
+</style>
+</head>
+<body>
+<div id="intro" role="dialog" aria-label="Welcome">
+  <div class="i-glow"></div>
+  <div class="i-head"><h1>PRATIBHA</h1><div class="i-series">THE SERIES</div></div>
+  <div class="i-stage"><img class="i-cut" src="images/cutout.webp" alt="Pratibha Mittal"></div>
+  <div class="i-foot"><div class="i-tag">SECURITY · FULL-STACK · APPLIED ML</div><button class="btn p i-play" id="play">▶ Play</button></div>
+</div>
+<div id="gate" role="dialog" aria-label="Choose a profile">
+  <h2>Who's watching?</h2>
+  <div class="profiles">
+    <button class="prof" data-p="main"><span class="main-tag">MAIN</span><span class="av" style="background:#8f1d45"><img src="images/avatar.jpg" alt=""></span><b>Pratibha</b><small>The full series, in order</small></button>
+    <button class="prof" data-p="recruiter"><span class="av" style="background:linear-gradient(135deg,#2a7a9b,#1b3f6b)">R</span><b>Recruiter</b><small>Resume, internships and skills first</small></button>
+    <button class="prof" data-p="developer"><span class="av" style="background:linear-gradient(135deg,#2f9e6a,#176046)">&lt;/&gt;</span><b>Developer</b><small>Projects, stack and GitHub first</small></button>
+    <button class="prof" data-p="storyteller"><span class="av" style="background:linear-gradient(135deg,#e0a21b,#a8481b)">✦</span><b>Storyteller</b><small>The journey and the person first</small></button>
+  </div>
+  <p class="mute" style="max-width:44ch;text-align:center;font-size:14px;margin:0">Every profile watches the same true story of Pratibha Mittal. It only changes what plays first.</p>
+</div>
+
+<header><nav class="wrap" style="width:100%">
+  <a class="logo" href="#home">P·SERIES</a>
+  <div class="links" id="links">
+    <a href="#home">Home</a><a href="#resume">Resume</a><a href="#skills">Skills</a><a href="#originals">Originals</a><a href="#journey">Journey</a><a href="#about">About</a><a href="#contact">Contact</a>
+  </div>
+  <button class="whoami" id="switch" aria-label="Switch profile"><span class="chip" id="chip"></span><em id="who">Pratibha</em></button>
+</nav></header>
+
+<main class="wrap">
+<section id="home">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">A portfolio original</div>
+      <h1 style="margin-top:14px">PRATIBHA<br>MITTAL</h1>
+      <div class="series">THE SERIES</div>
+      <div class="meta"><span class="hot">B.TECH CSE</span><span>2025 – 2029</span><span>3 Originals</span><span>2 Internships</span></div>
+      <div class="role">SECURITY · FULL-STACK · APPLIED ML</div>
+      <p class="lead">Second-year Computer Science student at IGDTUW who builds safety and security platforms: a phishing-forensics tool, real-time emergency response, and role-based access systems. Python, Flask and machine learning, shipped as working prototypes.</p>
+      <div class="btns hb">
+        <a class="btn p" href="#originals">▶ Play Originals</a>
+        <a class="btn s" href="#resume">View Resume</a>
+        <a class="btn s" href="https://github.com/Pratibha-igdtuw" target="_blank" rel="noopener">GitHub ↗</a>
+      </div>
+    </div>
+    <div class="portrait"><img src="images/hero.jpg" alt="Portrait of Pratibha Mittal"></div>
+  </div>
+  <a class="cont" href="#resume">Continue Exploring ↓</a>
+</section>
+
+<section id="resume">
+  <div class="head"><div><div class="eyebrow">The full story</div><h2>THE RESUME</h2></div><p>Every episode, on one page.</p></div>
+  <div class="resume">
+    <div class="paper">
+      <div><h3>Education</h3>
+        <div class="row"><div><b>Indira Gandhi Delhi Technical University for Women</b><small>B.Tech, Computer Science &amp; Engineering</small></div><time>2025 – 2029</time></div>
+        <div class="row"><div><b>Model School, Rohtak, Haryana</b><small>Schooling</small></div><time>2022 – 2024</time></div>
+      </div>
+      <div><h3>Internships &amp; certifications</h3>
+        <div class="row"><div><b>Secure Application Development &amp; Cyber Forensics</b><small>ISEA Project Phase-III (MeitY, Govt. of India), Dept. of IT, IGDTUW · 6 weeks</small></div><time>Jun–Jul 2026</time></div>
+        <div class="row"><div><b>AI &amp; Machine Learning</b><small>AICTE &amp; Edunet Foundation with IBM SkillsBuild · 6 weeks</small></div><time>Jan–Feb 2026</time></div>
+      </div>
+      <div><h3>Positions of responsibility</h3>
+        <div class="row"><div><b>Coordinator, Event Management Team</b><small>Tech Needs Society, IGDTUW. Plans and runs technical events with teams across the college.</small></div></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="card"><h3>Summary</h3><p class="mute" style="margin:0;font-size:14px">Builds full-stack, safety- and security-focused platforms across backend architecture, live data pipelines and applied machine learning.</p>
+        <div class="stats"><div><b>3</b><small>Originals</small></div><div><b>2</b><small>Internships</small></div><div><b>2029</b><small>Graduating</small></div></div></div>
+      <div class="card"><h3>Find me</h3><p class="mute" style="margin:0 0 12px;font-size:14px">New Delhi, India</p>
+        <div class="btns"><a class="btn s" href="https://linkedin.com/in/pratibha-mittal" target="_blank" rel="noopener">LinkedIn ↗</a><a class="btn s" href="https://github.com/Pratibha-igdtuw" target="_blank" rel="noopener">GitHub ↗</a></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="head"><div><div class="eyebrow">Genres</div><h2>MY SKILL UNIVERSE</h2></div><p>Pick a genre to see what is inside it.</p></div>
+  <div class="uni"><div class="cats" role="tablist" id="cats"></div><div class="panel" id="panel" role="tabpanel" aria-live="polite"></div></div>
+</section>
+
+<section id="originals">
+  <div class="head"><div><div class="eyebrow">Now streaming</div><h2>THE ORIGINALS</h2></div><p>Three projects, each with a real repository.</p></div>
+  <div class="rail">
+    <article class="ep">
+      <div class="poster g1"><b>E1</b><div class="tag">EPISODE 01 · PS-106</div><h3>THE FORENSIC ANALYST</h3></div>
+      <div class="body">
+        <p>AI-powered email threat detection, geolocation and forensic intelligence platform. Flags malicious emails, verifies sender authenticity and generates evidence reports.</p>
+        <div class="stack"><span>Python</span><span>Flask</span><span>scikit-learn</span><span>Leaflet.js</span><span>ReportLab</span><span>dnspython</span></div>
+        <details><summary>Behind the scenes</summary><ul>
+          <li>Seven core modules, including a Naïve Bayes phishing classifier and GeoIP clustering on a Leaflet threat map.</li>
+          <li>SPF, DKIM and DMARC sender verification, with automated PDF forensic reports.</li>
+          <li>Gmail and Outlook IMAP for live ingestion, SHA-256 chain-of-custody, and a feedback loop that retrains from analyst corrections.</li></ul></details>
+        <a class="go" href="https://github.com/Pratibha-igdtuw/email_protection_model" target="_blank" rel="noopener">github.com/Pratibha-igdtuw/email_protection_model ↗</a>
+      </div>
+    </article>
+    <article class="ep">
+      <div class="poster g2"><b>E2</b><div class="tag">EPISODE 02 · WORKING PROTOTYPE</div><h3>SAFEHER</h3></div>
+      <div class="body">
+        <p>Women's safety and emergency response platform with one-tap SOS, a live safety map and web push so contacts can respond in real time. Built collaboratively.</p>
+        <div class="stack"><span>Flask-SocketIO</span><span>SQLite</span><span>Leaflet</span><span>OSRM</span><span>TensorFlow</span><span>PyOTP</span></div>
+        <details><summary>Behind the scenes</summary><ul>
+          <li>Live safety mapping with Leaflet, OpenStreetMap and OSRM routing.</li>
+          <li>Voice-distress detection using TensorFlow YAMNet and a Random Forest classifier.</li>
+          <li>OTP-based authentication with PyOTP.</li></ul></details>
+        <a class="go" href="https://github.com/Pratibha-igdtuw/safeher" target="_blank" rel="noopener">github.com/Pratibha-igdtuw/safeher ↗</a>
+      </div>
+    </article>
+    <article class="ep">
+      <div class="poster g3"><b>E3</b><div class="tag">EPISODE 03 · COMPLETED</div><h3>THE GATEKEEPER</h3></div>
+      <div class="body">
+        <p>Secure Student Management System with role-based access control and hardened input handling.</p>
+        <div class="stack"><span>RBAC</span><span>CSRF protection</span><span>SQL-injection defenses</span><span>File validation</span></div>
+        <details><summary>Behind the scenes</summary><ul>
+          <li>Stronger SQL-injection defenses and CSRF protection across the app.</li>
+          <li>File-upload validation that blocks invalid or unsafe uploads.</li>
+          <li>A custom login-screen animation on the authentication interface.</li></ul></details>
+        <a class="go" href="https://github.com/NamitaSingh07/Secure-Student-Management-System" target="_blank" rel="noopener">github.com/NamitaSingh07/Secure-Student-Management-System ↗</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="journey">
+  <div class="head"><div><div class="eyebrow">5 seasons</div><h2>MY JOURNEY</h2></div><p>Pick a season to see its episodes.</p></div>
+  <div class="seasons" id="seasons" role="tablist"></div>
+  <div class="season" id="season" role="tabpanel" aria-live="polite"></div>
+</section>
+
+<section id="about">
+  <div class="head"><div><div class="eyebrow">Behind the series</div><h2>ABOUT</h2></div></div>
+  <div class="about">
+    <div>
+      <p>I am a second-year CSE student at IGDTUW in New Delhi. I like projects where software protects people: catching a phishing email before it is opened, or getting an SOS to the right contacts quickly.</p>
+      <p>I coordinate technical events for the Tech Needs Society, which means I also practise the unglamorous part of engineering: planning, handoffs and getting a team to the finish line.</p>
+      <p>I am looking for structured, mentorship-driven programs such as UBS Tomorrow's Talent, where I can learn from people who ship at scale.</p>
+    </div>
+    <div class="facts">
+      <div><span>Based in</span><b>New Delhi, India</b></div>
+      <div><span>Studying</span><b>B.Tech CSE, IGDTUW</b></div>
+      <div><span>Languages</span><b>Python, C/C++</b></div>
+      <div><span>Focus</span><b>Security, backend, applied ML</b></div>
+      <div><span>Community</span><b>Tech Needs Society</b></div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="contact">
+    <div class="eyebrow">Next episode</div>
+    <h2>LET'S BUILD<br>SOMETHING.</h2>
+    <div class="mail" id="mail">pratibha148btcse25@igdtuw.ac.in</div>
+    <div class="btns"><button class="btn p" id="copy">Copy email</button><a class="btn s" href="https://linkedin.com/in/pratibha-mittal" target="_blank" rel="noopener">LinkedIn ↗</a><a class="btn s" href="https://github.com/Pratibha-igdtuw" target="_blank" rel="noopener">GitHub ↗</a></div>
+  </div>
+</section>
+<footer><span>PRATIBHA MITTAL · THE SERIES</span><span>New Delhi · 2026</span></footer>
+</main>
+
+<script>
+(function(){
+var $=function(s,r){return (r||document).querySelector(s)};
+var gate=$('#gate'),intro=$('#intro'),body=document.body;
+var P={main:['Pratibha','linear-gradient(135deg,#8f1d45,#5b1f4d)'],recruiter:['Recruiter','linear-gradient(135deg,#2a7a9b,#1b3f6b)'],developer:['Developer','linear-gradient(135deg,#2f9e6a,#176046)'],storyteller:['Storyteller','linear-gradient(135deg,#e0a21b,#a8481b)']};
+var icon={main:'P',recruiter:'R',developer:'</>',storyteller:'✦'};
+function pick(p){
+  body.dataset.p=p;gate.hidden=true;intro.hidden=true;body.classList.remove('go');void body.offsetWidth;body.classList.add('go');
+  $('#who').textContent=P[p][0];var c=$('#chip');c.textContent=icon[p];c.style.background=P[p][1];
+  try{sessionStorage.setItem('p',p)}catch(e){}
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.prof').forEach(function(b){b.addEventListener('click',function(){pick(b.dataset.p)})});
+$('#switch').addEventListener('click',function(){gate.hidden=false;gate.querySelectorAll('.prof').forEach(function(p){p.style.animation='none';void p.offsetWidth;p.style.animation=''})});
+function restartProfiles(){gate.querySelectorAll('.prof').forEach(function(p){p.style.animation='none';void p.offsetWidth;p.style.animation=''})}
+$('#play').addEventListener('click',function(){intro.classList.add('out');restartProfiles();setTimeout(function(){intro.hidden=true;var f=gate.querySelector('.prof');if(f)f.focus({preventScroll:true})},650)});
+var saved=null;try{saved=sessionStorage.getItem('p')}catch(e){}
+if(saved&&P[saved]){pick(saved)}else{$('#chip').textContent='P';$('#chip').style.background=P.main[1];$('#play').focus({preventScroll:true})}
+
+/* skills */
+var S=[
+ ['Languages','Python is the primary language',[['Py','Python','#3776ab'],['C','C','#5a6b9e'],['C+','C++','#00599c']]],
+ ['Web & Backend','Flask services and live data',[['Fl','Flask','#2b2b2b'],['IO','Flask-SocketIO','#1f6f5c'],['H5','HTML5','#e44d26'],['CS','CSS','#2965f1'],['IM','IMAP','#8a4fb3'],['WP','Web Push','#c2410c']]],
+ ['Machine Learning','Classic and deep models',[['NB','Naïve Bayes','#b3183f'],['IF','Isolation Forest','#a8481b'],['RF','Random Forest','#2f7d4a'],['TF','TensorFlow (YAMNet)','#e8710a'],['Np','NumPy','#2a7a9b'],['Nx','NetworkX','#6b4fb3'],['sk','scikit-learn','#c47d10']]],
+ ['Databases','Where the data lives',[['SQ','SQL','#2a6fa8'],['Lt','SQLite','#1c5f8a']]],
+ ['Security','Defending the app and the inbox',[['RB','RBAC','#b3183f'],['CF','CSRF Protection','#8f1d45'],['SP','SPF / DKIM / DMARC','#2f7d4a'],['OT','PyOTP','#6b4fb3'],['SH','SHA-256 Hashing','#a8481b'],['DN','dnspython','#2a7a9b']]],
+ ['Tools','Daily drivers',[['Gt','Git','#d0432a'],['GH','GitHub','#3a3646'],['VS','VS Code','#2a6fa8'],['Lf','Leaflet.js','#2f7d4a'],['OS','OSRM','#1f6f5c'],['RL','ReportLab','#b3183f']]]
+];
+var cats=$('#cats'),panel=$('#panel');
+function showCat(i){
+  cats.querySelectorAll('.cat').forEach(function(b,j){b.setAttribute('aria-selected',j===i)});
+  var c=S[i];
+  panel.innerHTML='<h3>'+c[0]+' · '+c[2].length+' skills</h3><div class="tiles">'+c[2].map(function(t,n){return '<div class="tile" style="--i:'+n+'"><i style="background:'+t[2]+'">'+t[0]+'</i><span>'+t[1]+'</span></div>'}).join('')+'</div>';
+}
+S.forEach(function(c,i){var b=document.createElement('button');b.className='cat';b.setAttribute('role','tab');b.innerHTML=c[0].toUpperCase()+'<small>'+c[2].length+' skills · '+c[1]+'</small>';b.addEventListener('click',function(){showCat(i)});b.addEventListener('mouseenter',function(){if(matchMedia('(hover:hover)').matches)showCat(i)});cats.appendChild(b)});
+showCat(0);
+
+/* journey */
+var J=[
+ ['The Beginning','S1','Schooling in Rohtak, then the move to Delhi for engineering.',[['2022 – 2024','The Schoolkid','Model School, Rohtak, Haryana.'],['2025','Enter Delhi','Starts B.Tech in Computer Science &amp; Engineering at IGDTUW.']]],
+ ['Enter: AI & ML','S2','A first structured look at machine learning.',[['Jan – Feb 2026','The Learner','6-week AI &amp; Machine Learning internship under AICTE and Edunet Foundation, with IBM SkillsBuild.']]],
+ ['Security & Forensics','S3','Secure development and cyber forensics, on a national programme.',[['Jun – Jul 2026','The Investigator','6-week internship on Secure Application Development &amp; Cyber Forensics, ISEA Project Phase-III (MeitY, Govt. of India), at the Dept. of IT, IGDTUW.']]],
+ ['Building Real Products','S4','Three originals that put the learning to work.',[['PS-106','The Forensic Analyst','Phishing detection with forensic reporting.'],['Prototype','The Responder','SafeHer, a women\'s safety platform.'],['Completed','The Gatekeeper','A secure student management system.']]],
+ ['What\'s Next','S5','Looking for mentorship and bigger problems.',[['Next','UBS Tomorrow\'s Talent','Eager to grow through structured, mentorship-driven programs.'],['Ongoing','The Coordinator','Running technical events for the Tech Needs Society.']]]
+];
+var sb=$('#seasons'),se=$('#season');
+function showSeason(i){
+  sb.querySelectorAll('.sbtn').forEach(function(b,j){b.setAttribute('aria-selected',j===i)});
+  var s=J[i];
+  se.innerHTML='<h3>'+s[1]+' · '+s[0]+'</h3><p class="sub">'+s[2]+'</p><div class="eps">'+s[3].map(function(e,k){return '<article style="--i:'+(k+1)+'"><b>E'+(k+1)+'</b><div class="when">'+e[0]+'</div><h4>'+e[1]+'</h4><p>'+e[2]+'</p></article>'}).join('')+'</div>';
+}
+J.forEach(function(s,i){var b=document.createElement('button');b.className='sbtn';b.setAttribute('role','tab');b.innerHTML='<small>'+s[1]+'</small>'+s[0];b.addEventListener('click',function(){showSeason(i)});sb.appendChild(b)});
+showSeason(3);
+
+/* nav highlight */
+var links=document.querySelectorAll('#links a');
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){links.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id)})}})},{rootMargin:'-40% 0px -55% 0px'});
+document.querySelectorAll('main section').forEach(function(s){io.observe(s)});
+
+
+/* scroll reveal + parallax */
+var calm=matchMedia('(prefers-reduced-motion:reduce)').matches;
+if(!calm){
+  var rio=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');rio.unobserve(e.target)}})},{threshold:.12});
+  document.querySelectorAll('.head,.paper,.side .card,.ep,.uni,.seasons,.season,.about>*,.contact,.facts').forEach(function(el,i){
+    if(el.getBoundingClientRect().top<innerHeight*.9&&scrollY<10&&el.closest('#home'))return;
+    el.classList.add('rv');
+    var sib=el.parentElement?Array.prototype.indexOf.call(el.parentElement.children,el):0;
+    el.style.setProperty('--d',Math.min(sib,4));
+    rio.observe(el);
+  });
+  var img=$('.portrait img'),h1=$('.hero h1'),tick=false;
+  addEventListener('scroll',function(){if(tick)return;tick=true;requestAnimationFrame(function(){var y=Math.min(scrollY,700);if(img)img.style.translate='0 '+(y*.09)+'px';if(h1)h1.style.translate='0 '+(y*-.05)+'px';tick=false})},{passive:true});
+}
+
+/* copy */
+$('#copy').addEventListener('click',function(){
+  var t=$('#mail').textContent,b=this;
+  function ok(){b.textContent='Copied';setTimeout(function(){b.textContent='Copy email'},1600)}
+  function sel(){var r=document.createRange();r.selectNodeContents($('#mail'));var s=getSelection();s.removeAllRanges();s.addRange(r)}
+  try{navigator.clipboard.writeText(t).then(ok,sel)}catch(e){sel()}
+});
+})();
+</script>
+</body>
+</html>
